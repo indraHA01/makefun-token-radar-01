@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Token Radar — pre-token protocols ranked by implied launch value</title>
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<header class="hero">
+  <div class="hero-inner">
+    <div class="hero-top">
+      <div>
+        <p class="eyebrow">TOKEN RADAR &middot; IGNITION MODEL</p>
+        <h1>Which launch is worth farming next?</h1>
+        <p class="lede">Every protocol below records no token yet. Each is priced at what its launch
+        would be worth if it happened today — priced off the market's own per-sector price for
+        TVL, not a guess. Click any row for the model breakdown and the farm plan.</p>
+      </div>
+      <div class="hero-badge">
+        <span class="flame" aria-hidden="true">&#9679;</span>
+        <span id="heroTop">—</span>
+        <small>highest implied launch value</small>
+      </div>
+    </div>
+    <dl class="stats" id="stats"></dl>
+    <p class="asof" id="asof"></p>
+  </div>
+</header>
+
+<nav class="tabs" aria-label="Views">
+  <button class="tab active" data-tab="board" type="button">Pre-token board</button>
+  <button class="tab" data-tab="live" type="button">Live tokens</button>
+  <button class="tab" data-tab="model" type="button">How the model works</button>
+</nav>
+
+<main>
+  <section id="tab-board" class="panel">
+    <div class="controls" role="search">
+      <input id="q" type="search" placeholder="Search a protocol…" aria-label="Search protocols" autocomplete="off">
+      <select id="fCat" aria-label="Filter by category"><option value="">All categories</option></select>
+      <select id="fChain" aria-label="Filter by chain"><option value="">All chains</option></select>
+      <select id="fUrg" aria-label="Filter by urgency">
+        <option value="">Any urgency</option>
+        <option>Farm now</option>
+        <option>Farm steadily</option>
+        <option>Early — build slowly</option>
+      </select>
+      <select id="fSort" aria-label="Sort the board">
+        <option value="implied">Sort: implied value</option>
+        <option value="ignition">Sort: ignition score</option>
+        <option value="velocity">Sort: value per day</option>
+        <option value="tvl">Sort: TVL</option>
+        <option value="growth">Sort: 7-day change</option>
+        <option value="age">Sort: age</option>
+      </select>
+      <label class="check"><input id="fWatch" type="checkbox"> Watchlist only</label>
+    </div>
+    <p class="count" id="count"></p>
+    <div class="table-wrap">
+      <table id="board">
+        <thead><tr>
+          <th>#</th><th>Protocol</th><th>TVL</th><th>7d</th><th>Age</th>
+          <th>Ignition</th><th>Implied value</th><th>Urgency</th>
+        </tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+    <button class="more" id="more" type="button">Show more</button>
+  </section>
+
+  <section id="tab-live" class="panel hidden">
+    <p class="note">These tokens already trade. They are not ranked — they are the market the
+    model prices from. Each row shows the market cap the market itself gives the token, and the
+    multiple of TVL it trades at. The pre-token board is priced off these multiples, sector by sector.</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Protocol</th><th>TVL</th><th>Market cap</th><th>mcap / TVL</th><th>7d</th></tr></thead>
+        <tbody id="liveRows"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="tab-model" class="panel hidden">
+    <h2>The Ignition model</h2>
+    <p>A launch is an ignition event. The market has already told us what one is worth: live
+    tokens trade at a price per dollar of TVL, and that price differs by sector. A dollar of
+    bridge TVL is worth far more as a token than a dollar of liquid-staking TVL. So the model
+    reads the snapshot's own live-token set, takes the median market-cap-per-TVL of each
+    category, and prices every pre-token protocol at its own sector's multiple.</p>
+    <p class="formula">implied value = TVL &times; sector multiple &times; growth &times; maturity &times; breadth</p>
+    <ul class="factors">
+      <li><b>Sector multiple</b> — median mcap/TVL of the live tokens in the protocol's category (global median when a category has fewer than 3 live tokens). Clamped to 0.05&ndash;3.00.</li>
+      <li><b>Growth</b> — 1 + clamped 7-day TVL change (&minus;50% to +150%) &times; 0.6. A launch lands harder on a rising protocol.</li>
+      <li><b>Maturity</b> — 0.7 + min(age, 1095 days) / 1095 &times; 0.3. Pent-up demand: the longer a protocol has run with big TVL and no token, the more expectation has built around its launch.</li>
+      <li><b>Breadth</b> — 1 + min(chains &minus; 1, 5) &times; 0.02. More chains, more surface to launch from.</li>
+    </ul>
+    <h3>The market's price list</h3>
+    <p>What one dollar of TVL is worth as a token, sector by sector, from the live tokens in this snapshot:</p>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Sector</th><th>Multiple</th><th>Live tokens priced</th></tr></thead>
+      <tbody id="sectorRows"></tbody>
+    </table></div>
+    <h3>Ignition score &amp; urgency</h3>
+    <p><b>Ignition</b> (0&ndash;100) blends where a protocol stands on value (its rank percentile,
+    40%) with the heat of its factors — momentum 25%, maturity 20%, sector price 10%, breadth
+    5%. A high score means the launch window is hot. <b>Urgency</b> reads maturity
+    against momentum: <i>Farm now</i> when the window looks narrow, <i>Farm steadily</i> in the
+    middle, <i>Early — build slowly</i> while there is time to build a position.</p>
+    <h3>Velocity</h3>
+    <p>Implied value earned per day since listing. Sorting by velocity surfaces young giants —
+    protocols that accumulated enormous implied value in very little time — before the plain
+    TVL ranking does.</p>
+    <p class="fine">The snapshot is DefiLlama's protocol record as of the date above; it says a
+    protocol <i>records</i> no token, never that it has none. An implied value is this entry's own
+    claim about what a launch would be worth if the protocol's record stayed as it is — not a
+    prediction that a token will be issued, or when. Farm plans are generic guidance, not
+    financial advice; verify every step on the protocol's own pages before you move funds.</p>
+  </section>
+</main>
+
+<aside id="drawer" class="drawer" aria-label="Protocol detail" hidden>
+  <button class="close" id="drawerClose" type="button" aria-label="Close detail">&times;</button>
+  <div id="detail"></div>
+</aside>
+
+<footer>
+  <p>Token Radar &middot; Ignition model v1 &middot; Data: DefiLlama protocol snapshot, sealed
+  for this competition &middot; Built for make.fun's token-radar-01 bounty.</p>
+</footer>
+
+<script src="../data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
